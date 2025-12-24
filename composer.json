@@ -1,0 +1,55 @@
+{
+    "name": "gilbitron/canonical-context-logging-laravel",
+    "description": "Laravel integration for Canonical Context Logging - structured JSON logs with one wide event per request",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gilbitron",
+            "email": "gilbert@pellegrom.me"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/http": "^10.0|^11.0|^12.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0",
+        "gilbitron/canonical-context-logging": "^0.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "orchestra/testbench": "^8.0|^9.0|^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "CanonicalContextLogging\\Laravel\\": "src/"
+        },
+        "files": [
+            "src/Helpers/canonical_context.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CanonicalContextLogging\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "CanonicalContextLogging\\Laravel\\CanonicalContextLoggingServiceProvider"
+            ],
+            "aliases": {
+                "CanonicalContext": "CanonicalContextLogging\\Laravel\\Facades\\CanonicalContext"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "tbachert/spi": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
