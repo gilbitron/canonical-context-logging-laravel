@@ -1,6 +1,6 @@
 # Canonical Context Logging - Laravel Package
 
-Laravel integration for [Canonical Context Logging](https://loggingsucks.com/) - structured JSON logs with one wide event per request.
+Laravel integration for [Canonical Context Logging](https://github.com/gilbitron/canonical-context-logging) - structured JSON logs with one wide event per request.
 
 ## Overview
 
