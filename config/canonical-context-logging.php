@@ -30,7 +30,7 @@ return [
             // OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_PROTOCOL, etc.
             'endpoint' => env('CANONICAL_CONTEXT_OTLP_ENDPOINT', null),
             'protocol' => env('CANONICAL_CONTEXT_OTLP_PROTOCOL', null), // 'http/protobuf' or 'http/json'
-            'headers' => env('CANONICAL_CONTEXT_OTLP_HEADERS', []), // Array of headers
+            'headers' => explode(',', env('CANONICAL_CONTEXT_OTLP_HEADERS', '')), // Array of headers
             'timeout' => env('CANONICAL_CONTEXT_OTLP_TIMEOUT', null), // Seconds
         ],
     ],
