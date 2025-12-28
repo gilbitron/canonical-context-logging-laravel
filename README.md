@@ -336,7 +336,7 @@ $middleware->end($context);
 The package includes tests. Run them with:
 
 ```bash
-composer test
+./vendor/bin/phpunit
 ```
 
 ## Best Practices
