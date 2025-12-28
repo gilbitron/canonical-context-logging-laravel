@@ -10,8 +10,10 @@ use CanonicalContextLogging\Logger\CanonicalLogger;
 use CanonicalContextLogging\Laravel\Context\LaravelStorage;
 use CanonicalContextLogging\Laravel\Middleware\CanonicalContextMiddleware;
 use CanonicalContextLogging\Middleware\RequestMiddlewareInterface;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 
@@ -78,6 +80,69 @@ final class CanonicalContextMiddlewareTest extends TestCase
                 $this->assertArrayHasKey('context', $data);
                 $this->assertEquals('GET', $data['context']['http.method']);
                 $this->assertEquals('test', $data['context']['http.path']);
+            });
+
+        $this->middleware->handle($this->request, function ($request) {
+            return new Response('OK', 200);
+        });
+    }
+
+    public function testMiddlewareCapturesAuthenticatedUser(): void
+    {
+        $context = new EventContext();
+        $context->startRequest('trace-id', 'span-id');
+
+        $this->requestMiddleware
+            ->method('start')
+            ->willReturn($context);
+
+        $user = new class implements Authenticatable {
+            public string $email = 'user@example.com';
+
+            public function getAuthIdentifierName()
+            {
+                return 'id';
+            }
+
+            public function getAuthIdentifier()
+            {
+                return 123;
+            }
+
+            public function getAuthPassword()
+            {
+                return '';
+            }
+
+            public function getAuthPasswordName()
+            {
+                return 'password';
+            }
+
+            public function getRememberToken()
+            {
+                return null;
+            }
+
+            public function setRememberToken($value): void
+            {
+            }
+
+            public function getRememberTokenName()
+            {
+                return 'remember_token';
+            }
+        };
+
+        Auth::shouldReceive('check')->once()->andReturn(true);
+        Auth::shouldReceive('user')->once()->andReturn($user);
+
+        $this->requestMiddleware
+            ->method('end')
+            ->willReturnCallback(function ($ctx) use ($user) {
+                $data = $ctx->toArray();
+                $this->assertEquals($user->getAuthIdentifier(), $data['context']['user.id']);
+                $this->assertEquals($user->email, $data['context']['user.email']);
             });
 
         $this->middleware->handle($this->request, function ($request) {

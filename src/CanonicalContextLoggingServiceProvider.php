@@ -15,6 +15,7 @@ use CanonicalContextLogging\Laravel\Context\LaravelStorage;
 use CanonicalContextLogging\Laravel\Middleware\CanonicalContextMiddleware;
 use CanonicalContextLogging\Middleware\RequestMiddleware;
 use CanonicalContextLogging\Middleware\RequestMiddlewareInterface;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Configuration\Middleware as MiddlewareConfiguration;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -103,6 +104,7 @@ final class CanonicalContextLoggingServiceProvider extends ServiceProvider
         // Register middleware if enabled
         if ($this->app->make('config')->get('canonical-context-logging.middleware.enabled', true)) {
             $this->registerMiddleware();
+            $this->enforceMiddlewarePriority();
         }
     }
 
@@ -138,6 +140,47 @@ final class CanonicalContextLoggingServiceProvider extends ServiceProvider
                 $middleware->append(CanonicalContextMiddleware::class);
             }
         });
+    }
+
+    /**
+     * Ensure our middleware runs after authentication middleware.
+     * Works for Laravel 10-12 by adjusting the kernel priority list.
+     */
+    private function enforceMiddlewarePriority(): void
+    {
+        $kernel = $this->app->make(HttpKernel::class);
+        $kernelReflection = new \ReflectionObject($kernel);
+
+        if (!$kernelReflection->hasProperty('middlewarePriority')) {
+            return;
+        }
+
+        $priorityProperty = $kernelReflection->getProperty('middlewarePriority');
+        $priority = $priorityProperty->getValue($kernel);
+
+        if (!is_array($priority)) {
+            return;
+        }
+        $authMiddleware = Authenticate::class;
+        $sanctumMiddleware = 'Laravel\\Sanctum\\Http\\Middleware\\EnsureFrontendRequestsAreStateful';
+        $target = CanonicalContextMiddleware::class;
+
+        if (!in_array($authMiddleware, $priority, true)) {
+            $priority[] = $authMiddleware;
+        }
+
+        $priority = array_values(array_filter($priority, fn ($middleware) => $middleware !== $target));
+
+        $insertAfter = in_array($sanctumMiddleware, $priority, true) ? $sanctumMiddleware : $authMiddleware;
+        $position = array_search($insertAfter, $priority, true);
+
+        if ($position === false) {
+            $priority[] = $target;
+        } else {
+            array_splice($priority, $position + 1, 0, [$target]);
+        }
+
+        $priorityProperty->setValue($kernel, $priority);
     }
 
     /**
